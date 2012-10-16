@@ -1,0 +1,9 @@
+Section: Utilities
+Priority: optional
+Maintainer: Mohamed Mohsen <linuxer9@gmail.com>
+Package: automounter
+Architecture: all
+version: 0.1
+Description: Automount windows like BASH script
+ script mounts all mountable partitions to /media/{C,D,E,F..}
+ and can be run on startup.

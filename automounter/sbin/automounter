@@ -1,0 +1,76 @@
+#!/bin/bash
+
+if [ "$1" != "c" -a "$1" != "install" -a "$1" != "uninstall" ]
+then
+echo '''This script mounts all mountable partitions to /media/{C,D,E,F..} 
+usage:
+automounter c		to run script normally
+automounter install	to setup script and launch it at startup
+automounter uninstall 
+'''
+elif [ "$1" = "c" ]
+then
+	all=$(ls /dev/sd*)
+	fs=(`cat /etc/mtab|grep '^/'|grep -v 'media'|grep -v '/[CDEFGHIJKLMNOPQRSTUVWXYZ]'|sed 's/[ ].*[^ ].*//'`)
+	count=0
+	for i in $all
+	do
+		case "${fs[@]}" in  *"$i"*) ;; *)
+			type=`blkid $i | sed 's/.*TYPE="\([^"]\+\)".*/\1/'`
+			if [ ${#type} -ne 0 -a "${type}" != "swap" ]
+			then
+				partition=`echo ${partition} ${i}`
+				count=`expr $count + 1`
+			fi
+		;;  esac
+	done
+	#all that to avoid disks and extended partitions, we want only mountable partitions
+	for dev in $partition
+	do	
+
+		label=`blkid $dev | sed 's/.*LABEL="\([^"]\+\)".*/\1/'`
+		if [ "${label:0:1}" == "/" ]
+		then
+			uuid=`blkid $dev | sed 's/.*UUID="\([^"]\+\)".*/\1/'`
+			mnt=$uuid
+		else
+			mnt=$label
+		fi
+
+		array=("${array[@]}" "$dev")
+
+
+	done
+	win=({A..Z});win=(${win[@]:2:$count})
+	for ((i=0;i<$count;i++))
+	do
+		if [ ! -e /media/${win[$i]} ];then
+			mkdir  /media/${win[$i]} ;fi
+		mount ${array[$i]} /media/${win[$i]}
+	done
+	echo "All partitions have been mounted "
+
+elif [ "$1" = "install" ]
+then
+	check=`cat /etc/rc.local | grep "automounter c"`
+	if [ "$check" != "" ]
+	then
+		echo "the script is installed"
+		exit 0
+	else
+		sed -i '/exit 0/ d' /etc/rc.local
+		echo "automounter c" >> /etc/rc.local
+		echo "exit 0" >> /etc/rc.local
+		echo "the script installed sucessfully "
+	fi
+elif [ "$1" = "uninstall" ]
+then
+	check=`cat /etc/rc.local | grep "automounter c"`
+	if [ "$check" = "" ]
+	then
+		echo "the script is not installed"
+	else
+		sed -i '/automounter c/ d' /etc/rc.local
+		echo "the script uninstalled sucessfully "
+	fi
+fi
