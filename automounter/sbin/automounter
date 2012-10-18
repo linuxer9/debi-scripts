@@ -46,7 +46,7 @@ then
 	do
 		if [ ! -e /media/${win[$i]} ];then
 			mkdir  /media/${win[$i]} ;fi
-		mount ${array[$i]} /media/${win[$i]}
+		mount ${array[$i]} /media/${win[$i]}  -o umask=0
 	done
 	echo "All partitions have been mounted "
 
